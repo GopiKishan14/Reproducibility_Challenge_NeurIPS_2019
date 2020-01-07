@@ -5,9 +5,14 @@
 
 
 
-#git status
+git status
 #git pull origin master
 git add . 
 read -p 'Commit Msg: ' msg
-git commit -m "$msg"
+if [ -z "$msg"]
+then
+	git commit -m "Updates"
+else
+	git commit -m "$msg"
+fi
 #git push origin master
