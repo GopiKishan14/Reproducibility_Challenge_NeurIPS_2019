@@ -1,12 +1,8 @@
 #!/bin/bash
 
-#read -p "Msg: " msg
-#echo $msg
-
-
 
 git status
-#git pull origin master
+git pull origin master
 git add . 
 read -p 'Commit Msg: ' msg
 if [ -z "$msg"]
@@ -15,4 +11,4 @@ then
 else
 	git commit -m "$msg"
 fi
-#git push origin master
+git push origin master
