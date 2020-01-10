@@ -11905,15 +11905,7 @@ a.anchor-link {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Reproducibility_Challenge_NeurIPS_2019">Reproducibility_Challenge_NeurIPS_2019<a class="anchor-link" href="#Reproducibility_Challenge_NeurIPS_2019">&#182;</a></h1><p>The report is present <a href="https://gopikishan14.github.io/Reproducibility_Challenge_NeurIPS_2019/">here</a></p>
-<h1 id="Abstract">Abstract<a class="anchor-link" href="#Abstract">&#182;</a></h1><p>This is a report for reproducibility challenge of NeurlIPS’19 on the paper <code>Competitive gradient descent</code> <a href="https://arxiv.org/abs/1905.12103">(Schäfer et al., 2019)</a>. The paper introduces a novel algorithm
-for the numerical computation of Nash equilibria of competitive two-player
-games. It avoids oscillatory and divergent behaviors seen in alternating gradient
-descent.
-The paper proposes several experiments to establish the robustness of their method. This project
-aims at replicating their results.</p>
-<p>This report also summerises the method proposed in the original paper. Refer to the report for details.
-I would like to summerize the method here.</p>
+<h1 id="Reproducibility_Challenge_NeurIPS_2019">Reproducibility_Challenge_NeurIPS_2019<a class="anchor-link" href="#Reproducibility_Challenge_NeurIPS_2019">&#182;</a></h1><p>This is a blog explains method proposed in the paper Competitive gradient descent <a href="https://arxiv.org/abs/1905.12103">(Schäfer et al., 2019)</a>. This has been written as a supplimentary to the reproducibility report for reproducibility challenge of NeurlIPS’19. The pdf format of the report is present <a href="https://gopikishan14.github.io/Reproducibility_Challenge_NeurIPS_2019/">here</a> with this github <a href="https://github.com/GopiKishan14/Reproducibility_Challenge_NeurIPS_2019">repository</a> as its source.</p>
 
 </div>
 </div>
@@ -12074,7 +12066,153 @@ for\ (0 &lt;= k &lt;= N-1)\\
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Code-Implementation">Code Implementation<a class="anchor-link" href="#Code-Implementation">&#182;</a></h2><h3 id="Computing-Hessian-vector-products">Computing Hessian vector products<a class="anchor-link" href="#Computing-Hessian-vector-products">&#182;</a></h3><h3 id="Matrix-inversion-for-the-equilibrium-term">Matrix inversion for the equilibrium term<a class="anchor-link" href="#Matrix-inversion-for-the-equilibrium-term">&#182;</a></h3>
+<h2 id="Code-Implementation">Code Implementation<a class="anchor-link" href="#Code-Implementation">&#182;</a></h2><p>The competitive gradeint descent algorithm contains gradient, competitive and equilibrium term. So, we need to efficiently calculat them. The equibrium term is a matrix inverse</p>
+<h3 id="Computing-Hessian-vector-products">Computing Hessian vector products<a class="anchor-link" href="#Computing-Hessian-vector-products">&#182;</a></h3><p>The algorithm requires products of the mixed Hessian $v \mapsto D_{xy}f v$ and  $v \mapsto D_{yx}g v$, which we want to compute using automatic differentiation.</p>
+<p>Many AD frameworks, like Autograd (<a href="https://github.com/HIPS/autograd">https://github.com/HIPS/autograd</a>) and ForwardDiff(<a href="https://github.com/JuliaDiff/ForwardDiff.jl">https://github.com/JuliaDiff/ForwardDiff.jl</a>) together with ReverseDiff(<a href="https://github.com/JuliaDiff/ReverseDiff.jl">https://github.com/JuliaDiff/ReverseDiff.jl</a>) support this procedure. While the authors used the AD frameworks from Julia, I will be using Autograd from PyTorch (<a href="https://pytorch.org/docs/stable/autograd.html">https://pytorch.org/docs/stable/autograd.html</a>)</p>
+<h3 id="Matrix-inversion-for-the-equilibrium-term">Matrix inversion for the equilibrium term<a class="anchor-link" href="#Matrix-inversion-for-the-equilibrium-term">&#182;</a></h3><p>Authors propose to use iterative methods to approximate the inverse-matrix vector products arising in the <em>equilibrium term</em>.
+Authors focus on zero-sum games, where the matrix is always symmetric positive definite, making the <a href="https://en.wikipedia.org/wiki/Conjugate_gradient_method">conjugate gradient (CG)</a> algorithm the method of choice. 
+They also suggest terminating the iterative solver after a given relative decrease of the residual is achieved ($\| M x - y \| \leq \epsilon \|x\|$ for a small parameter $\epsilon$, when solving the system $Mx = y$).</p>
+<p>Briefly, conjugate gradient (CG) iteratively solves the system $Mx = y$ for $x$ without calculating $M^{-1}$.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[14]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Simple python implemetation of CG tested on an example</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Problem setup</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">],</span> 
+               <span class="p">[</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">]])</span> <span class="c1"># the matrix A in : Ax = b</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="mf">2.0</span><span class="p">],</span> 
+               <span class="p">[</span><span class="o">-</span><span class="mf">8.0</span><span class="p">]])</span>  <span class="c1"># we will use the convention that a vector is a column vector</span>
+
+
+<span class="c1"># solution approach</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">([[</span><span class="o">-</span><span class="mf">2.0</span><span class="p">],</span>
+               <span class="p">[</span><span class="o">-</span><span class="mf">2.0</span><span class="p">]])</span>
+
+<span class="n">steps</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">)]</span>  <span class="c1"># modify according to x</span>
+<span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">imax</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">eps</span> <span class="o">=</span> <span class="mf">0.01</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">b</span> <span class="o">-</span> <span class="n">A</span> <span class="o">*</span> <span class="n">x</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">r</span>
+<span class="n">deltanew</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">r</span>
+<span class="n">delta0</span> <span class="o">=</span> <span class="n">deltanew</span>
+<span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">imax</span> <span class="ow">and</span> <span class="n">deltanew</span> <span class="o">&gt;</span> <span class="n">eps</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">delta0</span><span class="p">:</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">deltanew</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="p">(</span><span class="n">A</span> <span class="o">*</span> <span class="n">d</span><span class="p">)))</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">d</span>
+    <span class="n">steps</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">b</span> <span class="o">-</span> <span class="n">A</span> <span class="o">*</span> <span class="n">x</span>
+    <span class="n">deltaold</span> <span class="o">=</span> <span class="n">deltanew</span>
+    <span class="n">deltanew</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">r</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">deltanew</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">deltaold</span><span class="p">))</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">r</span> <span class="o">+</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">d</span>
+    <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Solution vector x* for Ax = b :&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;And the steps taken by algorithm : &quot;</span><span class="p">,</span> <span class="n">steps</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Solution vector x* for Ax = b :
+[[ 2.]
+ [-2.]]
+And the steps taken by algorithm :  [(-2.0, -2.0), (0.08000000000000007, -0.6133333333333333), (2.0, -2.0)]
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[14]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>[&lt;matplotlib.lines.Line2D at 0x7feedcb0d828&gt;,
+ &lt;matplotlib.lines.Line2D at 0x7feedcb0d9b0&gt;]</pre>
+</div>
+
+</div>
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+
+
+<div class="output_png output_subarea ">
+<img src="data:image/png;base64,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
+"
+>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Now-to-solve-our-problem-of-CGD,-the-following-equation">Now to solve our problem of CGD, the following equation<a class="anchor-link" href="#Now-to-solve-our-problem-of-CGD,-the-following-equation">&#182;</a></h4><p>\begin{equation}
+\begin{pmatrix}
+     \Delta x\\
+     \Delta y
+\end{pmatrix} = -
+\begin{pmatrix}
+    Id        &amp; \eta D_{xy}^2 f \\
+    \eta D_{yx}^2 g &amp; Id        
+\end{pmatrix}^{-1}
+\begin{pmatrix}
+     \nabla_{x} f\\
+     \nabla_{y} g
+\end{pmatrix}.
+\end{equation}</p>
+<h4 id="can-be-written-as">can be written as<a class="anchor-link" href="#can-be-written-as">&#182;</a></h4><p>\begin{equation}
+\begin{pmatrix}
+    Id        &amp; \eta D_{xy}^2 f \\
+    \eta D_{yx}^2 g &amp; Id        
+\end{pmatrix}
+\begin{pmatrix}
+     \Delta x\\
+     \Delta y
+\end{pmatrix} = -
+\begin{pmatrix}
+     \nabla_{x} f\\
+     \nabla_{y} g
+\end{pmatrix}.
+\end{equation}</p>
+<h4 id="so-that-the-conjugate-gradient-method-can-used-to-calculate-$\Delta-x$-and-$\Delta-y$-without-inverting-the-matrix.">so that the conjugate gradient method can used to calculate $\Delta x$ and $\Delta y$ without inverting the matrix.<a class="anchor-link" href="#so-that-the-conjugate-gradient-method-can-used-to-calculate-$\Delta-x$-and-$\Delta-y$-without-inverting-the-matrix.">&#182;</a></h4>
 </div>
 </div>
 </div>
@@ -12082,11 +12220,14 @@ for\ (0 &lt;= k &lt;= N-1)\\
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Conclusion">Conclusion<a class="anchor-link" href="#Conclusion">&#182;</a></h2><p>Look out to experiments and conclusion section</p>
+<h2 id="Conclusion">Conclusion<a class="anchor-link" href="#Conclusion">&#182;</a></h2><p>In the words of the authors of original paper,
+<code>We propose a novel and natural generalization of gradient descent to competitive optimization. Besides its attractive game-theoretic interpretation, the algorithm shows improved robustness properties compared to the existing methods, which we study using a combination of theoretical analysis and computational experiments.</code></p>
+<p>Look out to the conclusion section of the <a href="https://arxiv.org/pdf/1905.12103.pdf">paper</a> for extensive conclusion and future aspects.
+Refers to the Experiment and Conclusion section of the reproducibility <a href="https://gopikishan14.github.io/Reproducibility_Challenge_NeurIPS_2019/index.html">report</a> for details on replication.</p>
 
 </div>
 </div>
-</div>
+</div></section></section>
 </div>
 </div>
 
