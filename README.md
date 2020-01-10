@@ -9,5 +9,5 @@ The paper proposes several experiments to establish the robustness of their meth
 
 The [reproducibility report](https://gopikishan14.github.io/Reproducibility_Challenge_NeurIPS_2019/index.html) contains a short description of the method proposed in the original paper and analysis of replication of experiments. 
 
-This projects also brings a more high lavel introduction to the original paper through this [blog](https://gopikishan14.github.io/Reproducibility_Challenge_NeurIPS_2019/README.html). The blog also contains the implementation details of the proposed algorithm in python3 (based on PyTorch).
+This projects also brings a gentle introduction to the original paper through this [blog](https://gopikishan14.github.io/Reproducibility_Challenge_NeurIPS_2019/README.html) which can be seen as supplementary to the reproducibility report. It can also be seen as [slides](https://gopikishan14.github.io/Reproducibility_Challenge_NeurIPS_2019/README.slides.html) format. The blog also contains the implementation details of the conjugate gradient algorithm in python3 which is a component of the proposed algorithm, which itself can be seen in this jupyter [notebook](https://github.com/GopiKishan14/Reproducibility_Challenge_NeurIPS_2019/blob/master/Optimiser.ipynb). Code in python3 (based on PyTorch)
 
